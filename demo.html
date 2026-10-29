@@ -1,0 +1,60 @@
+<!doctype html><html lang="en" dir="ltr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Salon chat assistant demo</title><script src="https://cdn.tailwindcss.com"></script></head>
+<body class="bg-stone-100 min-h-screen flex items-center justify-center p-3">
+<div class="w-full max-w-md bg-white rounded-xl shadow flex flex-col h-[80vh]">
+<div class="p-3 border-b flex items-center justify-between">
+<div><div class="font-bold" id="name">Glow Salon (demo)</div><div class="text-xs text-stone-500" id="sub">Replies in seconds, books slots</div></div>
+<button id="lang" class="text-sm px-3 py-1 rounded bg-stone-200">العربية</button></div>
+<div id="chat" class="flex-1 overflow-y-auto p-3 flex flex-col gap-2 bg-[#efe9e1]"></div>
+<div id="quick" class="p-2 flex flex-wrap gap-2 border-t"></div>
+<form id="f" class="p-2 border-t flex gap-2"><input id="in" class="flex-1 border rounded px-3 py-2 text-sm" autocomplete="off"><button class="px-4 rounded bg-emerald-600 text-white text-sm" id="send">Send</button></form>
+</div>
+<script>
+const T={en:{dir:'ltr',sub:'Replies in seconds, books slots',send:'Send',ph:'Type a message…',
+hi:'Hello! Welcome to Glow Salon. I can tell you our prices and hours, or book you a slot. What would you like?',
+q:['Prices','Opening hours','Book a slot','Location'],
+price:'Prices: Haircut AED 120, Colour from AED 350, Blow dry AED 80, Manicure AED 90, Facial AED 200.',
+hours:'We are open every day 10:00 to 21:00 (Friday 14:00 to 21:00).',
+loc:'We are in Jumeirah, Dubai. Map: maps.example/glow',
+pick:'Which service do you want?',svc:['Haircut','Colour','Blow dry','Manicure','Facial'],
+day:'Which day?',days:['Today','Tomorrow','Day after tomorrow'],time:'Pick a time:',
+name:'Please type your name.',ph2:'Please type your phone number.',
+done:(s,d,t,n)=>`Booked! ${s}, ${d} at ${t}, for ${n}. We will send a reminder on WhatsApp. Reply here to change it.`,
+bad:'Sorry, I did not get that. Please tap a button: prices, hours, location or book a slot.',
+kw:{price:/price|cost|how much|aed/i,hours:/hour|open|close|time/i,loc:/where|location|address|map/i,book:/book|appointment|slot|reserve/i}},
+ar:{dir:'rtl',sub:'ردود خلال ثوانٍ وحجز المواعيد',send:'إرسال',ph:'اكتب رسالة…',
+hi:'مرحباً! أهلاً بك في صالون غلو. أستطيع إخبارك بالأسعار والمواعيد أو حجز موعد لك. كيف أساعدك؟',
+q:['الأسعار','ساعات العمل','احجز موعداً','الموقع'],
+price:'الأسعار: قص الشعر 120 درهم، صبغة من 350 درهم، تسشوير 80 درهم، مانيكير 90 درهم، تنظيف بشرة 200 درهم.',
+hours:'نعمل يومياً من 10:00 إلى 21:00 (الجمعة من 14:00 إلى 21:00).',
+loc:'نحن في جميرا، دبي. الخريطة: maps.example/glow',
+pick:'ما الخدمة التي تريدينها؟',svc:['قص الشعر','صبغة','تسشوير','مانيكير','تنظيف بشرة'],
+day:'أي يوم؟',days:['اليوم','غداً','بعد غد'],time:'اختاري الوقت:',
+name:'من فضلك اكتبي اسمك.',ph2:'من فضلك اكتبي رقم هاتفك.',
+done:(s,d,t,n)=>`تم الحجز! ${s}، ${d} الساعة ${t}، باسم ${n}. سنرسل تذكيراً على واتساب. اكتبي هنا لتغيير الموعد.`,
+bad:'عذراً، لم أفهم. اضغطي على زر: الأسعار، ساعات العمل، الموقع أو احجز موعداً.',
+kw:{price:/سعر|أسعار|اسعار|كم|تكلف/,hours:/ساعات|دوام|مفتوح|متى|وقت/,loc:/وين|أين|اين|موقع|عنوان/,book:/حجز|احجز|موعد/}}};
+const SLOTS=['11:00','12:30','14:30','16:00','18:00'];
+let L='en',st=null,bk={};
+const $=id=>document.getElementById(id),chat=$('chat');
+function add(w,t){const d=document.createElement('div');d.className=(w=='me'?'self-end bg-[#dcf8c6]':'self-start bg-white')+' rounded-lg px-3 py-2 text-sm max-w-[85%] shadow';d.textContent=t;chat.appendChild(d);chat.scrollTop=chat.scrollHeight}
+function chips(a,fn){const q=$('quick');q.innerHTML='';a.forEach(x=>{const b=document.createElement('button');b.className='px-3 py-1 rounded-full border text-sm bg-white';b.textContent=x;b.onclick=()=>user(x,fn);q.appendChild(b)})}
+function menu(){st=null;chips(T[L].q,null)}
+function startBook(){st='svc';add('bot',T[L].pick);chips(T[L].svc,null)}
+function user(t){add('me',t);reply(t)}
+function reply(t){const x=T[L];
+ if(st=='svc'){bk.s=t;st='day';add('bot',x.day);return chips(x.days)}
+ if(st=='day'){bk.d=t;st='time';add('bot',x.time);return chips(SLOTS)}
+ if(st=='time'){bk.t=t;st='name';add('bot',x.name);return chips([])}
+ if(st=='name'){bk.n=t;st='phone';add('bot',x.ph2);return chips([])}
+ if(st=='phone'){add('bot',x.done(bk.s,bk.d,bk.t,bk.n));bk={};return menu()}
+ if(x.q[0]==t||x.kw.price.test(t)){add('bot',x.price);return menu()}
+ if(x.q[1]==t||x.kw.hours.test(t)){add('bot',x.hours);return menu()}
+ if(x.q[3]==t||x.kw.loc.test(t)){add('bot',x.loc);return menu()}
+ if(x.q[2]==t||x.kw.book.test(t))return startBook();
+ add('bot',x.bad);menu()}
+function setLang(l){L=l;const x=T[l];document.documentElement.lang=l;document.documentElement.dir=x.dir;$('sub').textContent=x.sub;$('send').textContent=x.send;$('in').placeholder=x.ph;$('lang').textContent=l=='en'?'العربية':'English';chat.innerHTML='';st=null;bk={};add('bot',x.hi);menu()}
+$('f').onsubmit=e=>{e.preventDefault();const v=$('in').value.trim();if(!v)return;$('in').value='';user(v)};
+$('lang').onclick=()=>setLang(L=='en'?'ar':'en');
+setLang('en');
+</script></body></html>
